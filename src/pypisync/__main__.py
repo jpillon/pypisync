@@ -23,7 +23,7 @@ def create_parser():
     return parser
 
 
-if __name__ == "__main__":
+def main():
     opts = create_parser().parse_args(sys.argv[1:])
     if opts.debug:
         logging.basicConfig(level=logging.DEBUG)
@@ -31,3 +31,6 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.INFO)
     sys.exit(pypisync.main(opts.config, opts.simple_layout, opts.no_cache))
 
+
+if __name__ == "__main__":
+    main()
