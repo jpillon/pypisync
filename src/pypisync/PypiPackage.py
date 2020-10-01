@@ -208,6 +208,11 @@ class PypiPackage(Hashable):
         filename = os.path.basename(urllib.parse.urlparse(url).path)
         return filename, file_hash
 
+    @property
+    def file_basename(self):
+        filename, _ = self._get_hash_from_url(self.url)
+        return os.path.basename(filename)
+
     @classmethod
     def _create_filename(cls, url, destination_folder, simple_layout):
         """
