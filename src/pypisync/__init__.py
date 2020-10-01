@@ -7,6 +7,7 @@ from .memoize import memoize
 from .PypiSync import PypiSync
 from .PypiPackage import PypiPackage
 from .XmlRPC import ServerProxy
+from .SimpleIndexGenerator import SimpleIndexGenerator
 
 
 def main(config_file, simple_layout, no_cache):
