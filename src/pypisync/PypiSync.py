@@ -54,7 +54,7 @@ class PypiConnector:
     @staticmethod
     @pypisync.memoize(True)
     def get_project_info(project_name, arch_exclude):
-        return list(PypiConnector. get_project_info_generator(project_name, arch_exclude))
+        return list(PypiConnector.get_project_info_generator(project_name, arch_exclude))
 
     @staticmethod
     def get_project_info_generator(project_name, arch_exclude):
@@ -162,7 +162,7 @@ class PypiSync:
                 if packaging.version.Version(project.version) == latest_version:
                     yield project
 
-    def get_distribution_packages(self, packages, latest_only=False, progress=False):
+    def packages(self, packages, latest_only=False, progress=False):
         desc = "Building package list"
         if progress:
             iterator = tqdm(
@@ -201,17 +201,9 @@ class PypiSync:
                 if latest_only:
                     matched = self._keep_latest(matched)
                 for project_ in matched:
-                    yield project_
+                    yield pypisync.PypiPackage(project_.project, project_.version, project_.url)
             if progress:
                 iterator.set_description(desc)
-
-    def build_packages_list(self, packages_list, latest_only=False, progress=False):
-        packages = {}
-        for package in self.get_distribution_packages(packages_list, latest_only, progress=progress):
-            if (package.project, package.version) not in packages:
-                packages[(package.project, package.version)] = pypisync.PypiPackage(package.project, package.version)
-                yield packages[(package.project, package.version)]
-            packages[(package.project, package.version)].add_url(package.url)
 
     def _download(self, packages):
         packages = set(packages)
@@ -231,62 +223,13 @@ class PypiSync:
             self.logger.debug("Downloading %s %s", package.name, package.version)
             self._downloaded.add(package)
             package.download(self._destination_folder, self._simple_layout)
-            self._dependencies[package] = set(self.build_packages_list(package.dependencies(self._environment), True))
+            if package not in self._dependencies:
+                self._dependencies[package] = set()
+            self._dependencies[package].update(set(self.packages(package.dependencies(self._environment), True)))
             all_dependencies.update(self._dependencies[package])
             iterator.set_description("", refresh=True)
 
         self._download(all_dependencies)
-
-    def _generate_simple_index(self):
-        simple_root = os.path.join(self._destination_folder, "simple")
-        data = {}
-        for package in sorted(self._downloaded):
-            package_name = pypi_simple.normalize(package.name)
-
-            if package_name not in data:
-                data[package_name] = {
-                    "package_root": os.path.join(simple_root, package_name),
-                    "links": [],
-                    "basenames": [],
-                    "file_hashes": []
-                }
-
-            for filename, file_hash in sorted(zip(package.files, package.hashes)):
-                link = os.path.relpath(filename, data[package_name]["package_root"])
-                basename = os.path.basename(filename)
-                data[package_name]["links"].append(link)
-                data[package_name]["basenames"].append(basename)
-                data[package_name]["file_hashes"].append(file_hash)
-
-        for package_name in data:
-            os.makedirs(data[package_name]["package_root"], exist_ok=True)
-            with open(os.path.join(data[package_name]["package_root"], "index.html"), "wt") as index_html:
-                # TODO: Proper template
-                index_html.write("""<!DOCTYPE html>
-<html>
-  <head>
-    <title>Links for {package_name}</title>
-  </head>
-  <body>
-    <h1>Links for {package_name}</h1>
-""".format(package_name=package_name))
-
-                for link, basename, file_hash in zip(
-                        data[package_name]["links"],
-                        data[package_name]["basenames"],
-                        data[package_name]["file_hashes"]
-                ):
-                    index_html.write(
-                        '    <a href="{link}#sha256={hash}">{basename}</a><br/>\n'.format(
-                            link=link,
-                            basename=basename,
-                            hash=file_hash
-                        )
-                    )
-
-                index_html.write("""  </body>
-</html>
-""")
 
     def run(self):
         self._downloaded = set()
@@ -302,18 +245,29 @@ class PypiSync:
                             this_package_list[package] = []
                         this_package_list[package] += self._packages_re[packages_re_str]
         this_package_list.update(self._in_packages_list)
-        self._download(self.build_packages_list(this_package_list, progress=True))
+        self._download(self.packages(this_package_list, progress=True))
 
         if self._simple_layout:
-            self._generate_simple_index()
+            generator = pypisync.SimpleIndexGenerator(os.path.join(self._destination_folder, "simple"))
+            generator.generate(self._downloaded)
 
-        # Generate dependencies tree. TODO: add a command line switch for this
-        with open('./graph.dot', 'w') as out:
-            for line in ('digraph G {',):
-                out.write('{}\n'.format(line))
-            for p in self._dependencies:
-                out.write('{} [label="{}"];\n'.format(hash(p), p))
-            for p in self._dependencies:
-                for d in self._dependencies[p]:
-                    out.write('{} -> {};\n'.format(hash(p), hash(d)))
-            out.write('}\n')
+        # Generate dependencies tree.
+        # TODO: add a command line switch for this
+        # TODO: This is buggy as if A and B depends on C, it will only appear for the first downloaded one.
+        # simplify = {}
+        # for package in self._dependencies:
+        #     simplified = pypisync.PypiPackage(package.name, package.version, None)
+        #     if simplified not in simplify:
+        #         simplify[simplified] = set()
+        #     for dep in self._dependencies[package]:
+        #         simplify[simplified].add(pypisync.PypiPackage(dep.name, dep.version, None))
+        #
+        # with open('./graph.dot', 'w') as out:
+        #     for line in ('digraph G {',):
+        #         out.write('{}\n'.format(line))
+        #     for p in simplify:
+        #         out.write('{} [label="{}"];\n'.format(hash(p), p))
+        #     for p in simplify:
+        #         for d in simplify[p]:
+        #             out.write('{} -> {};\n'.format(hash(p), hash(d)))
+        #     out.write('}\n')

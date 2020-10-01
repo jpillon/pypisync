@@ -7,7 +7,6 @@ import os
 import subprocess
 import pkginfo
 import packaging.requirements
-from multiprocessing import Pool
 
 
 class Hashable:
@@ -45,16 +44,16 @@ class PypiPackage(Hashable):
     """
     Defines a package with its version
     """
-    def __init__(self, name, version):
+    def __init__(self, name, version, url):
         self._name = name
         self._version = version
-        self._urls = set()
-        self._local_files = []
-        self._hashes = []
+        self._url = url
+        self._local_file = None
+        self._file_hash = None
 
     @property
     def _hash_value(self):
-        return self._name, self._version
+        return self._name, self._version, self._url
 
     @property
     def name(self):
@@ -64,20 +63,17 @@ class PypiPackage(Hashable):
     def version(self):
         return self._version
 
-    def add_url(self, url):
-        self._urls.add(url)
+    @property
+    def url(self):
+        return self._url
 
     @property
-    def urls(self):
-        return sorted(self._urls)
+    def local_file(self):
+        return self._local_file
 
     @property
-    def files(self):
-        return self._local_files
-
-    @property
-    def hashes(self):
-        return self._hashes
+    def file_hash(self):
+        return self._file_hash
 
     @staticmethod
     def _find_suitable_value(variable, marker):
@@ -165,15 +161,13 @@ class PypiPackage(Hashable):
             env_marker = tokens[1]
         return version, env_marker
 
-    @staticmethod
-    # @pypisync.memoize()
-    def _read_dependencies_from_file(filename, environment):
+    def dependencies(self, environment):
         """
         Read the dependencies in the local file
         :return: same format as in the "packages" config file parameter
         """
         result = {}
-        metadata = pkginfo.get_metadata(filename)
+        metadata = pkginfo.get_metadata(self._local_file)
 
         if metadata is not None:
             for require in metadata.requires_dist:
@@ -191,38 +185,12 @@ class PypiPackage(Hashable):
                     result[version.name].append(specifier)
         return result
 
-    def dependencies(self, environment):
-        """
-        Read the dependencies in the local files
-        :return: same format as in the "packages" config file parameter
-        """
-        result = {}
-        for filename in self._local_files:
-            result.update(
-                self._read_dependencies_from_file(filename, environment)
-            )
-        return result
-
-    def _download_url(self, url_filename):
-        url, filename = url_filename
+    def _download_url(self, url, filename):
         self.logger.debug("Filename: %s", filename)
         self.logger.debug("URL: %s", url)
         os.makedirs(os.path.dirname(filename), exist_ok=True)
 
         # TODO: Pure python ?
-        # subprocess.check_call(
-        #     [
-        #         "curl",
-        #         "-L",
-        #         "-o",
-        #         filename,
-        #         "-O",
-        #         "-C", "-",
-        #         url
-        #     ],
-        #     stderr=subprocess.PIPE
-        # )
-
         subprocess.check_call(
             [
                 "wget",
@@ -233,24 +201,6 @@ class PypiPackage(Hashable):
             ],
             stderr=subprocess.PIPE
         )
-        # wget.download(url, filename)
-        # response = requests.get(url, allow_redirects=True)
-        # checksum = hashlib.sha256()
-        # with open(filename, "wb") as f:
-        #     while True:
-        #         chunk = response.content
-        #         if not chunk:
-        #             break
-        #         checksum.update(chunk)
-        #         f.write(chunk)
-        # file_basename, file_hash = self._get_hash_from_url(url)
-        # existing_hash = checksum.hexdigest()
-        # if existing_hash != file_hash:
-        #     if retry:
-        #         self.logger.warning("Hash mismatch for %s, retrying", file_basename)
-        #         os.unlink(filename)
-        #     else:
-        #         self.logger.error("Hash mismatch for %s, giving up...", file_basename)
 
     @staticmethod
     def _get_hash_from_url(url):
@@ -282,14 +232,6 @@ class PypiPackage(Hashable):
     def download(self, destination_folder, simple_layout):
         if not os.path.exists(destination_folder):
             os.mkdir(destination_folder)
-        self.logger.debug("Downloading %s %s", self._name, self._version)
-
-        for url in self.urls:
-            filename, file_hash = self._create_filename(url, destination_folder, simple_layout)
-            self._local_files.append(filename)
-            self._hashes.append(file_hash)
-
-        # for x in zip(self.urls, self._local_files):
-        #     self._download_url(x)
-        pool = Pool(min(len(self.urls), 8))
-        pool.map(self._download_url, zip(self.urls, self._local_files))
+        self.logger.debug("Downloading %s %s (%s)", self.name, self.version, self.url)
+        self._local_file, self._file_hash = self._create_filename(self.url, destination_folder, simple_layout)
+        self._download_url(self.url, self.local_file)
