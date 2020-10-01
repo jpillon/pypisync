@@ -1,0 +1,5 @@
+pkginfo
+packaging
+tqdm
+pypi-simple
+requests

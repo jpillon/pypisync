@@ -1,0 +1,4 @@
+__cache__
+*.pyc
+/.venv
+/.pypisync.PypiSync
