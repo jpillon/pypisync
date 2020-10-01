@@ -162,20 +162,8 @@ class PypiSync:
                 if packaging.version.Version(project.version) == latest_version:
                     yield project
 
-    def packages(self, packages, latest_only=False, progress=False):
-        desc = "Building package list"
-        if progress:
-            iterator = tqdm(
-                packages,
-                desc=desc,
-                unit=" packages",
-                bar_format="{desc:<50}{percentage:3.0f} %|{bar}{r_bar:<50}"
-            )
-        else:
-            iterator = packages
-        for package in iterator:
-            if progress:
-                iterator.set_description("%s %s" % (desc, package))
+    def packages(self, packages, latest_only=False):
+        for package in packages:
             wanted_versions = packages[package]
 
             for wanted_version in wanted_versions:
@@ -200,36 +188,30 @@ class PypiSync:
                         matched.append(project)
                 if latest_only:
                     matched = self._keep_latest(matched)
+
                 for project_ in matched:
                     yield pypisync.PypiPackage(project_.project, project_.version, project_.url)
-            if progress:
-                iterator.set_description(desc)
 
     def _download(self, packages):
-        packages = set(packages)
-        packages = packages.difference(self._downloaded)
-        if len(packages) == 0:
-            return
-
         all_dependencies = set()
-        iterator = tqdm(
-            packages,
-            desc="Downloading",
-            unit=" packages",
-            bar_format="{desc:<50}{percentage:3.0f} %|{bar}{r_bar:<50}"
-        )
-        for package in iterator:
-            iterator.set_description("%s %s" % (package.name, package.version), refresh=True)
-            self.logger.debug("Downloading %s %s", package.name, package.version)
+        for package in packages:
+            if package in self._downloaded:
+                continue
+            self.logger.info(
+                "Downloading %s %s %s",
+                package.name,
+                package.version,
+                os.path.basename(package.file_basename)
+            )
             self._downloaded.add(package)
             package.download(self._destination_folder, self._simple_layout)
             if package not in self._dependencies:
                 self._dependencies[package] = set()
             self._dependencies[package].update(set(self.packages(package.dependencies(self._environment), True)))
             all_dependencies.update(self._dependencies[package])
-            iterator.set_description("", refresh=True)
 
-        self._download(all_dependencies)
+        if all_dependencies:
+            self._download(all_dependencies)
 
     def run(self):
         self._downloaded = set()
@@ -245,7 +227,7 @@ class PypiSync:
                             this_package_list[package] = []
                         this_package_list[package] += self._packages_re[packages_re_str]
         this_package_list.update(self._in_packages_list)
-        self._download(self.packages(this_package_list, progress=True))
+        self._download(self.packages(this_package_list))
 
         if self._simple_layout:
             generator = pypisync.SimpleIndexGenerator(os.path.join(self._destination_folder, "simple"))
