@@ -207,7 +207,6 @@ class PypiSync:
 
     def build_packages_list(self, packages_list, latest_only=False, progress=False):
         packages = {}
-
         for package in self.get_distribution_packages(packages_list, latest_only, progress=progress):
             if (package.project, package.version) not in packages:
                 packages[(package.project, package.version)] = pypisync.PypiPackage(package.project, package.version)
@@ -262,6 +261,7 @@ class PypiSync:
         for package_name in data:
             os.makedirs(data[package_name]["package_root"], exist_ok=True)
             with open(os.path.join(data[package_name]["package_root"], "index.html"), "wt") as index_html:
+                # TODO: Proper template
                 index_html.write("""<!DOCTYPE html>
 <html>
   <head>
@@ -307,7 +307,7 @@ class PypiSync:
         if self._simple_layout:
             self._generate_simple_index()
 
-        # Generate dependencies tree
+        # Generate dependencies tree. TODO: add a command line switch for this
         with open('./graph.dot', 'w') as out:
             for line in ('digraph G {',):
                 out.write('{}\n'.format(line))
