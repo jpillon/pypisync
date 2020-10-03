@@ -3,6 +3,7 @@ import os
 import logging
 import json
 import pypi_simple
+import concurrent.futures
 import packaging.version
 import packaging.specifiers
 import re
@@ -190,25 +191,49 @@ class PypiSync:
                     matched = self._keep_latest(matched)
 
                 for project_ in matched:
-                    yield pypisync.PypiPackage(project_.project, project_.version, project_.url)
+                    yield pypisync.PypiPackage(
+                        project_.project,
+                        project_.version,
+                        project_.url,
+                        self._destination_folder,
+                        self._simple_layout,
+                        self._environment
+                    )
+
+    @staticmethod
+    def _download_package(package):
+        PypiSync.logger.info(
+            "Downloading %s %s %s",
+            package.name,
+            package.version,
+            os.path.basename(package.file_basename)
+        )
+        package.download()
+        return package, package.dependencies()
 
     def _download(self, packages):
+        results = []
         all_dependencies = set()
         for package in packages:
             if package in self._downloaded:
                 continue
-            self.logger.info(
-                "Downloading %s %s %s",
-                package.name,
-                package.version,
-                os.path.basename(package.file_basename)
-            )
-            self._downloaded.add(package)
-            package.download(self._destination_folder, self._simple_layout)
-            if package not in self._dependencies:
-                self._dependencies[package] = set()
-            self._dependencies[package].update(set(self.packages(package.dependencies(self._environment), True)))
+            # submit packages for downloading
+            with concurrent.futures.ProcessPoolExecutor() as executor:
+                results.append(
+                    executor.submit(
+                        self._download_package,
+                        package
+                    )
+                )
+                if package not in self._dependencies:
+                    self._dependencies[package] = set()
+
+        # retrieve the dependencies
+        for result in results:
+            package, dependencies = result.result()
+            self._dependencies[package].update(set(self.packages(dependencies, True)))
             all_dependencies.update(self._dependencies[package])
+            self._downloaded.add(package)
 
         if all_dependencies:
             self._download(all_dependencies)

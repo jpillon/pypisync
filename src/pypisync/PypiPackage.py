@@ -44,12 +44,16 @@ class PypiPackage(Hashable):
     """
     Defines a package with its version
     """
-    def __init__(self, name, version, url):
+    def __init__(self, name, version, url, destination_folder, simple, environment):
         self._name = name
         self._version = version
         self._url = url
         self._local_file = None
         self._file_hash = None
+        self._destination_folder = destination_folder
+        self._simple = simple
+        self._environment = environment
+        self._local_file, self._file_hash = self._create_filename(self.url, self._destination_folder, self._simple)
 
     @property
     def _hash_value(self):
@@ -161,7 +165,7 @@ class PypiPackage(Hashable):
             env_marker = tokens[1]
         return version, env_marker
 
-    def dependencies(self, environment):
+    def dependencies(self):
         """
         Read the dependencies in the local file
         :return: same format as in the "packages" config file parameter
@@ -174,7 +178,7 @@ class PypiPackage(Hashable):
                 version, env_marker = PypiPackage._parse_requirement(require)
                 version = packaging.requirements.Requirement(version)
                 if env_marker is not None:
-                    if not PypiPackage.evaluate_env_marker(env_marker, environment):
+                    if not PypiPackage.evaluate_env_marker(env_marker, self._environment):
                         continue
                 if version.name not in result:
                     result[version.name] = []
@@ -234,9 +238,5 @@ class PypiPackage(Hashable):
             filename = os.path.join(destination_folder, file_basename)
         return filename, file_hash
 
-    def download(self, destination_folder, simple_layout):
-        if not os.path.exists(destination_folder):
-            os.mkdir(destination_folder)
-        self.logger.debug("Downloading %s %s (%s)", self.name, self.version, self.url)
-        self._local_file, self._file_hash = self._create_filename(self.url, destination_folder, simple_layout)
+    def download(self):
         self._download_url(self.url, self.local_file)
