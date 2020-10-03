@@ -32,23 +32,9 @@ class ProxiedTransport(xmlrpc.client.SafeTransport):
         return h
 
     def send_request(self, host, handler, request_body, debug):
-        if self.proxy is None:
-            return super().send_request(host, handler, request_body, debug)
-        connection = self.make_connection(host)
-        headers = self._extra_headers[:]
-        new_handler = 'http://%s%s' % (self.real_host, handler)
-        if debug:
-            connection.set_debuglevel(1)
-        if self.accept_gzip_encoding and gzip:
-            connection.putrequest("POST", new_handler, skip_accept_encoding=True)
-            headers.append(("Accept-Encoding", "gzip"))
-        else:
-            connection.putrequest("POST", new_handler)
-        headers.append(("Content-Type", "text/xml"))
-        headers.append(("User-Agent", self.user_agent))
-        self.send_headers(connection, headers)
-        self.send_content(connection, request_body)
-        return connection
+        if self.proxy is not None:
+            handler = 'http://%s%s' % (self.real_host, handler)
+        return super().send_request(host, handler, request_body, debug)
 
 
 def get_xmlrpc_server_proxy(
