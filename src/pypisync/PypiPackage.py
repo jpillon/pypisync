@@ -24,18 +24,28 @@ class Hashable:
         return hash(self._hash_value)
 
     def __lt__(self, other):
+        if not isinstance(other, Hashable):
+            return NotImplemented
         return self._hash_value < other._hash_value
 
     def __le__(self, other):
+        if not isinstance(other, Hashable):
+            return NotImplemented
         return self._hash_value <= other._hash_value
 
     def __gt__(self, other):
+        if not isinstance(other, Hashable):
+            return NotImplemented
         return self._hash_value > other._hash_value
 
     def __ge__(self, other):
+        if not isinstance(other, Hashable):
+            return NotImplemented
         return self._hash_value >= other._hash_value
 
     def __eq__(self, other):
+        if not isinstance(other, Hashable):
+            return NotImplemented
         return isinstance(other, type(self)) and self._hash_value == other._hash_value
 
 
