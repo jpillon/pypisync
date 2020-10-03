@@ -126,7 +126,7 @@ class PypiSync:
             wanted = packaging.version.Version(wanted)
             current = packaging.version.Version(current)
             result = current == wanted
-        except:
+        except packaging.version.InvalidVersion:
             # Bad version. don't download it
             result = False
 
