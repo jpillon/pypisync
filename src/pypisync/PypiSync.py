@@ -95,7 +95,7 @@ class PypiSync:
         with open(config_file, 'rt') as fp:
             data = json.load(fp)
         self._connector = PypiConnector(data["endpoint"])
-
+        self._simplified_dependencies = {}
         self._in_packages_list = data["packages"]
         self._environment = None
         if "environment" in data:
@@ -228,8 +228,17 @@ class PypiSync:
         # retrieve the dependencies
         for result in results:
             package, dependencies = result.result()
-            all_dependencies.update(set(self.packages(dependencies, True)))
+            packages_dependencies = set(self.packages(dependencies, True))
+            all_dependencies.update(packages_dependencies)
             self._downloaded.add(package)
+
+            simplified = pypisync.PypiPackage(pypi_simple.normalize(package.name), package.version)
+            if simplified not in self._simplified_dependencies:
+                self._simplified_dependencies[simplified] = set()
+            for dependency in packages_dependencies:
+                self._simplified_dependencies[simplified].add(
+                    pypisync.PypiPackage(pypi_simple.normalize(dependency.name), dependency.version)
+                )
 
         if all_dependencies:
             self._download(all_dependencies)
@@ -237,6 +246,7 @@ class PypiSync:
     def run(self):
         self._downloaded = set()
         this_package_list = {}
+        self._simplified_dependencies = {}
         if self._packages_re is not None:
             # build a primary package list from the simple index
             self.logger.info("Getting the packages list (might take some time...)")
