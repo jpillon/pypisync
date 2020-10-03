@@ -64,6 +64,7 @@ class PypiPackage(Hashable):
         self._simple = simple
         self._environment = environment
         self._local_file, self._file_hash = self._create_filename(self.url, self._destination_folder, self._simple)
+        self._dependencies = None
 
     @property
     def _hash_value(self):
@@ -180,24 +181,25 @@ class PypiPackage(Hashable):
         Read the dependencies in the local file
         :return: same format as in the "packages" config file parameter
         """
-        result = {}
-        metadata = pkginfo.get_metadata(self._local_file)
+        if self._dependencies is None:
+            self._dependencies = {}
+            metadata = pkginfo.get_metadata(self._local_file)
 
-        if metadata is not None:
-            for require in metadata.requires_dist:
-                version, env_marker = PypiPackage._parse_requirement(require)
-                version = packaging.requirements.Requirement(version)
-                if env_marker is not None:
-                    if not PypiPackage.evaluate_env_marker(env_marker, self._environment):
-                        continue
-                if version.name not in result:
-                    result[version.name] = []
-                specifier = str(version.specifier).strip()
-                if specifier == "":
-                    specifier = "latest"
-                if specifier not in result[version.name]:
-                    result[version.name].append(specifier)
-        return result
+            if metadata is not None:
+                for require in metadata.requires_dist:
+                    version, env_marker = PypiPackage._parse_requirement(require)
+                    version = packaging.requirements.Requirement(version)
+                    if env_marker is not None:
+                        if not PypiPackage.evaluate_env_marker(env_marker, self._environment):
+                            continue
+                    if version.name not in self._dependencies:
+                        self._dependencies[version.name] = set()
+                    specifier = str(version.specifier).strip()
+                    if specifier == "":
+                        specifier = "latest"
+                    if specifier not in self._dependencies[version.name]:
+                        self._dependencies[version.name].add(specifier)
+        return self._dependencies
 
     def _download_url(self, url, filename):
         self.logger.debug("Filename: %s", filename)
