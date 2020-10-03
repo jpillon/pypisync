@@ -9,7 +9,11 @@ logger = logging.getLogger(__name__)
 
 
 class ProxiedTransport(xmlrpc.client.SafeTransport):
-    def set_proxy(self, proxy):
+    def __init__(self, use_datetime=False, use_builtin_types=False,
+                 *, headers=(), proxy=None):
+        super().__init__(use_datetime=use_datetime,
+                         use_builtin_types=use_builtin_types,
+                         headers=headers)
         self.proxy = proxy
         if self.proxy is not None:
             while self.proxy.endswith("/"):
@@ -18,6 +22,7 @@ class ProxiedTransport(xmlrpc.client.SafeTransport):
                 self.proxy = self.proxy[7:]
             while self.proxy.startswith("https://"):
                 self.proxy = self.proxy[8:]
+        self.real_host = None
 
     def make_connection(self, host):
         if self.proxy is None:
@@ -54,14 +59,18 @@ def get_xmlrpc_server_proxy(
         allow_none=False,
         use_datetime=False,
         use_builtin_types=False,
-        *args,
+        *,
         headers=(),
         context=None
 ):
     if transport is not None:
         logger.error("transport is ignored as it is replaced by ProxiedTransport")
-    p = ProxiedTransport()
-    p.set_proxy(os.environ.get("HTTP_PROXY", None))
+    p = ProxiedTransport(
+        proxy=os.environ.get("HTTP_PROXY", None),
+        use_datetime=False,
+        use_builtin_types=False,
+        headers=(),
+    )
     return xmlrpc.client.ServerProxy(
         uri,
         transport=p,
@@ -70,7 +79,6 @@ def get_xmlrpc_server_proxy(
         allow_none=allow_none,
         use_datetime=use_datetime,
         use_builtin_types=use_builtin_types,
-        *args,
         headers=headers,
         context=context
     )
