@@ -54,7 +54,7 @@ class PypiPackage(Hashable):
     """
     Defines a package with its version
     """
-    def __init__(self, name, version, url, destination_folder, simple, environment):
+    def __init__(self, name, version, url=None, destination_folder=None, simple=None, environment=None):
         self._name = name
         self._version = version
         self._url = url
@@ -63,12 +63,20 @@ class PypiPackage(Hashable):
         self._destination_folder = destination_folder
         self._simple = simple
         self._environment = environment
-        self._local_file, self._file_hash = self._create_filename(self.url, self._destination_folder, self._simple)
+        if self._url is not None and self._destination_folder is not None:
+            self._local_file, self._file_hash = self._create_filename(self.url, self._destination_folder, self._simple)
         self._dependencies = None
 
     @property
     def _hash_value(self):
-        return self._name, self._version, self._url
+        value = (self._name,)
+        if self._version is not None:
+            value = value + (self._version,)
+        if self._url is not None:
+            value = value + (self.file_basename,)
+        if len(value) == 1:
+            value = value[0]
+        return value
 
     @property
     def name(self):
