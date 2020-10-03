@@ -31,7 +31,7 @@ class SimpleIndexGenerator:
         :param packages: the list of packages
         """
 
-        # Begin with grouping packages
+        # Begin with grouping packages by normalized names
         grouped = {}
         for package in packages:
             package_name = pypi_simple.normalize(package.name)
@@ -51,11 +51,12 @@ class SimpleIndexGenerator:
             os.makedirs(grouped[package_name]["package_root"], exist_ok=True)
             with open(os.path.join(grouped[package_name]["package_root"], "index.html"), "wt") as index_html:
                 index_html.write(self.package_begin.format(package_name=package_name))
-                for link, basename, file_hash in zip(
+                # Packages are sorted by basename
+                for link, basename, file_hash in sorted(zip(
                         grouped[package_name]["links"],
                         grouped[package_name]["basenames"],
                         grouped[package_name]["file_hashes"]
-                ):
+                ), key=lambda x: x[1]):
                     index_html.write(
                         self.package_link.format(
                             link=link,
