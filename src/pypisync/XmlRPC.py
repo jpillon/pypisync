@@ -1,6 +1,5 @@
 import xmlrpc.client
 import http.client
-import gzip
 import os
 import logging
 
@@ -70,4 +69,5 @@ def get_xmlrpc_server_proxy(
     )
 
 
+# TODO: Maybe use another lib for proxy compatibility (like xmlrpclibex)
 ServerProxy = get_xmlrpc_server_proxy
