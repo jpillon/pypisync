@@ -109,7 +109,6 @@ class PypiSync:
         self._packages_re = None
         if "packages_re" in data and data["packages_re"]:
             self._packages_re = data["packages_re"]
-        self._dependencies = {}
         pypisync.memoize.filename = ".%s" % __name__
         self._simple_layout = simple_layout
         if not no_cache:
@@ -225,14 +224,11 @@ class PypiSync:
                         package
                     )
                 )
-                if package not in self._dependencies:
-                    self._dependencies[package] = set()
 
         # retrieve the dependencies
         for result in results:
             package, dependencies = result.result()
-            self._dependencies[package].update(set(self.packages(dependencies, True)))
-            all_dependencies.update(self._dependencies[package])
+            all_dependencies.update(set(self.packages(dependencies, True)))
             self._downloaded.add(package)
 
         if all_dependencies:
