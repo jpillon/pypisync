@@ -10,9 +10,9 @@ from .XmlRPC import ServerProxy
 from .SimpleIndexGenerator import SimpleIndexGenerator
 
 
-def main(config_file, simple_layout, no_cache):
+def main(config_file, simple_layout, no_cache, gen_graph):
     try:
-        syncer = PypiSync(config_file, simple_layout, no_cache)
+        syncer = PypiSync(config_file, simple_layout, no_cache, gen_graph)
         return syncer.run()
     finally:
         memoize.save()

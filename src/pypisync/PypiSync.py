@@ -90,7 +90,7 @@ class PypiConnector:
 class PypiSync:
     logger = logging.getLogger(__name__)
 
-    def __init__(self, config_file, simple_layout, no_cache):
+    def __init__(self, config_file, simple_layout, no_cache, gen_graph):
         self.logger.debug("Loading configuration: %s", config_file)
         with open(config_file, 'rt') as fp:
             data = json.load(fp)
@@ -111,6 +111,7 @@ class PypiSync:
             self._packages_re = data["packages_re"]
         pypisync.memoize.filename = ".%s" % __name__
         self._simple_layout = simple_layout
+        self._gen_graph = gen_graph
         if not no_cache:
             pypisync.memoize.load()
 
@@ -265,22 +266,14 @@ class PypiSync:
             generator.generate(self._downloaded)
 
         # Generate dependencies tree.
-        # TODO: add a command line switch for this
-        # TODO: This is buggy as if A and B depends on C, it will only appear for the first downloaded one.
-        # simplify = {}
-        # for package in self._dependencies:
-        #     simplified = pypisync.PypiPackage(package.name, package.version, None)
-        #     if simplified not in simplify:
-        #         simplify[simplified] = set()
-        #     for dep in self._dependencies[package]:
-        #         simplify[simplified].add(pypisync.PypiPackage(dep.name, dep.version, None))
-        #
-        # with open('./graph.dot', 'w') as out:
-        #     for line in ('digraph G {',):
-        #         out.write('{}\n'.format(line))
-        #     for p in simplify:
-        #         out.write('{} [label="{}"];\n'.format(hash(p), p))
-        #     for p in simplify:
-        #         for d in simplify[p]:
-        #             out.write('{} -> {};\n'.format(hash(p), hash(d)))
-        #     out.write('}\n')
+        if self._gen_graph:
+            self.logger.info("Generating dependency graph")
+            with open('./graph.dot', 'w') as out:
+                for line in ('digraph G {',):
+                    out.write('{}\n'.format(line))
+                for p in self._simplified_dependencies:
+                    out.write('{} [label="{}"];\n'.format(hash(p), p))
+                for p in self._simplified_dependencies:
+                    for d in self._simplified_dependencies[p]:
+                        out.write('{} -> {};\n'.format(hash(p), hash(d)))
+                out.write('}\n')
