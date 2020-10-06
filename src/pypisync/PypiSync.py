@@ -127,21 +127,31 @@ class PypiSync:
         PypiSync.logger.debug("%s, %s => %s", wanted, current, result)
         return result
 
-    def _latest_version(self, package, arch_exclude, n=1):
-        all_versions = []
+    def _latest_version(self, package, arch_exclude, n=1, spec=None):
+        all_versions_str = set()
         for project in self._connector.get_project_info(package, arch_exclude):
+            if spec is not None:
+                if not self._version_match(spec, project.version):
+                    continue
+            all_versions_str.add(project.version)
+
+        all_versions = []
+        for version_str in all_versions_str:
             try:
-                all_versions.append(packaging.version.Version(project.version))
+                all_versions.append(packaging.version.Version(version_str))
             except packaging.version.InvalidVersion:
                 # Ignore them...
                 pass
 
-        all_versions = sorted(set(all_versions))
+        all_versions = sorted(all_versions)
         if not all_versions:
             return None
         while len(all_versions) < n:
             n -= 1
-        return ">=%s" % all_versions[-n]
+        if spec is None:
+            return ">=%s" % all_versions[-n]
+        else:
+            return ">=%s,%s" % (all_versions[-n], spec)
 
     @staticmethod
     def _keep_latest(packages):
@@ -157,26 +167,27 @@ class PypiSync:
                     yield project
 
     def packages(self, packages, latest_only=False):
+        ref_latest_re = re.compile("^(?P<n>[0-9]+)? *latest(?P<spec>.*)?$")
         for package in packages:
             wanted_versions = packages[package]
 
             for wanted_version in wanted_versions:
                 if wanted_version == "latest":
                     wanted_version = "1 latest"
-                if "latest" in wanted_version:
-                    latest_only = True
-                if wanted_version.endswith("latest"):
+                ref_latest = ref_latest_re.fullmatch(wanted_version)
+                if ref_latest:
+                    n = 1
+                    if ref_latest.group("n") is not None:
+                        n = int(ref_latest.group("n"))
                     wanted_version = self._latest_version(
                         package,
                         self._arch_exclude,
-                        int(wanted_version.replace("latest", ""))
+                        n,
+                        ref_latest.group("spec")
                     )
                 if wanted_version is None:
                     continue
                 matched = []
-                if latest_only:
-                    while "latest" in wanted_version:
-                        wanted_version = wanted_version.replace("latest", "")
                 for project in self._connector.get_project_info(package, self._arch_exclude):
                     if self._version_match(wanted_version, project.version):
                         matched.append(project)
