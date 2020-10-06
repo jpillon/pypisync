@@ -3,3 +3,5 @@ packaging
 tqdm
 pypi-simple
 requests
+ddt[tests]
+virtualenv[tests]
