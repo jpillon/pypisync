@@ -181,7 +181,7 @@ class PypiSyncTests(HTTPServerTest):
             self.current_config["packages"]["pip"] = ["latest"]
         self.generate_config_file()
         syncer = pypisync.PypiSync(
-            self.current_config_file, simple, True, False
+            self.current_config_file, simple, False
         )
         self.assertEqual(syncer.run(), 0)
         self.check_install_package(package, simple)

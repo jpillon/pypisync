@@ -9,6 +9,6 @@ from .XmlRPC import ServerProxy
 from .SimpleIndexGenerator import SimpleIndexGenerator
 
 
-def main(config_file, simple_layout, no_cache, gen_graph):
-    syncer = PypiSync(config_file, simple_layout, no_cache, gen_graph)
+def main(config_file, simple_layout, gen_graph):
+    syncer = PypiSync(config_file, simple_layout, gen_graph)
     return syncer.run()

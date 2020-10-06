@@ -88,7 +88,7 @@ class PypiConnector:
 class PypiSync:
     logger = logging.getLogger(__name__)
 
-    def __init__(self, config_file, simple_layout, no_cache, gen_graph):
+    def __init__(self, config_file, simple_layout, gen_graph):
         self.logger.debug("Loading configuration: %s", config_file)
         with open(config_file, 'rt') as fp:
             data = json.load(fp)

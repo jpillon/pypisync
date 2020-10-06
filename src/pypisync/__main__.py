@@ -29,7 +29,7 @@ def main():
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
-    sys.exit(pypisync.main(opts.config, opts.simple_layout, opts.no_cache, opts.gen_graph))
+    sys.exit(pypisync.main(opts.config, opts.simple_layout, opts.gen_graph))
 
 
 if __name__ == "__main__":
