@@ -273,3 +273,4 @@ class PypiSync:
                     for d in self._simplified_dependencies[p]:
                         out.write('{} -> {};\n'.format(hash(p), hash(d)))
                 out.write('}\n')
+        return 0
