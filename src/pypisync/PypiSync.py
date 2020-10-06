@@ -48,12 +48,10 @@ class PypiConnector:
         )
 
     @staticmethod
-    @pypisync.memoize(True)
     def get_projects_names():
         return PypiConnector._xmlrpc_client.list_packages()
 
     @staticmethod
-    @pypisync.memoize(True)
     def get_project_info(project_name, arch_exclude):
         return list(PypiConnector.get_project_info_generator(project_name, arch_exclude))
 
@@ -116,7 +114,6 @@ class PypiSync:
             pypisync.memoize.load()
 
     @staticmethod
-    @pypisync.memoize()
     def _version_match(wanted, current):
         try:
             wanted = packaging.specifiers.SpecifierSet(wanted)
@@ -150,7 +147,6 @@ class PypiSync:
         return ">=%s" % all_versions[-n]
 
     @staticmethod
-    @pypisync.memoize()
     def _keep_latest(packages):
         all_versions = []
         for project in packages:
