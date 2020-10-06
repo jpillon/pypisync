@@ -73,6 +73,7 @@ class PypiSyncTests(HTTPServerTest):
     packages_to_test = [
         ("pyyaml", "latest"),
         ("awscli", "latest"),
+        ("django", "2 latest<3"),
         ("djangorestframework", "latest"),
     ]
 
@@ -131,7 +132,7 @@ class PypiSyncTests(HTTPServerTest):
         virtualenv.cli_run([self.venv_dir])
 
         # install the package
-        package_name = package[0] if package[1] == "latest" else "%s%s" % (package[0], package[1])
+        package_name = package[0] if "latest" in package[1] else "%s%s" % (package[0], package[1])
         print(pip_args)
         self.assertEqual(
             subprocess.check_call(
