@@ -11,7 +11,6 @@ def create_parser():
 
     parser.add_argument("-c", "--config", help="Path to the configuration file", default="./pypisync.conf")
     parser.add_argument("-d", "--debug", help="Activate debug", action="store_true", default=False)
-    parser.add_argument("-n", "--no_cache", help="Disable cache reading", action="store_true", default=False)
     parser.add_argument("-g", "--gen_graph", help="Generate a dependency graph", action="store_true", default=False)
     parser.add_argument(
         "-s",

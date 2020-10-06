@@ -107,11 +107,8 @@ class PypiSync:
         self._packages_re = None
         if "packages_re" in data and data["packages_re"]:
             self._packages_re = data["packages_re"]
-        pypisync.memoize.filename = ".%s" % __name__
         self._simple_layout = simple_layout
         self._gen_graph = gen_graph
-        if not no_cache:
-            pypisync.memoize.load()
 
     @staticmethod
     def _version_match(wanted, current):

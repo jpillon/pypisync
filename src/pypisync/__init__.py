@@ -3,7 +3,6 @@
 
 __version__ = "1.0.0"
 
-from .memoize import memoize
 from .PypiSync import PypiSync
 from .PypiPackage import PypiPackage
 from .XmlRPC import ServerProxy
@@ -11,8 +10,5 @@ from .SimpleIndexGenerator import SimpleIndexGenerator
 
 
 def main(config_file, simple_layout, no_cache, gen_graph):
-    try:
-        syncer = PypiSync(config_file, simple_layout, no_cache, gen_graph)
-        return syncer.run()
-    finally:
-        memoize.save()
+    syncer = PypiSync(config_file, simple_layout, no_cache, gen_graph)
+    return syncer.run()
