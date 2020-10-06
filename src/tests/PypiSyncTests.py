@@ -132,8 +132,17 @@ class PypiSyncTests(HTTPServerTest):
         virtualenv.cli_run([self.venv_dir])
 
         # install the package
-        package_name = package[0] if "latest" in package[1] else "%s%s" % (package[0], package[1])
-        print(pip_args)
+        version = ""
+        try:
+            version = "==%s" % packaging.version.Version(package[1])
+        except packaging.version.InvalidVersion:
+            try:
+                version = "%s" % packaging.specifiers.SpecifierSet(package[1])
+            except packaging.specifiers.InvalidSpecifier:
+                pass
+
+        package_name = "%s%s" % (package[0], version)
+
         self.assertEqual(
             subprocess.check_call(
                 [
