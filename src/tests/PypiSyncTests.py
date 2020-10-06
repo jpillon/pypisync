@@ -200,3 +200,18 @@ class PypiSyncTests(HTTPServerTest):
         )
         self.assertEqual(syncer.run(), 0)
         self.check_install_package(package, simple)
+
+    def test_re(self):
+        """
+        Download a given package and check if it is installable
+        """
+        # Update the configuration with the given package
+        self.current_config["packages_re"]["pyyaml"] = ["latest"]
+        if "pip" not in self.current_config["packages"]:
+            self.current_config["packages"]["pip"] = ["latest"]
+        self.generate_config_file()
+        syncer = pypisync.PypiSync(
+            self.current_config_file, False, False
+        )
+        self.assertEqual(syncer.run(), 0)
+        self.check_install_package(("pyyaml", "latest"), False)
