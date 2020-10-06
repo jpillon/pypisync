@@ -11,6 +11,8 @@ import threading
 import virtualenv
 import time
 import copy
+import packaging.version
+import packaging.specifiers
 
 
 class HTTPServerTest(unittest.TestCase):
@@ -72,6 +74,9 @@ class PypiSyncTests(HTTPServerTest):
     # Packages that will be tested
     packages_to_test = [
         ("pyyaml", "latest"),
+        ("pyyaml", "5.1.1"),
+        ("pyyaml", "latest>5.0.0"),
+        ("pyyaml", ">=5.2.0"),
         ("awscli", "latest"),
         ("django", "2 latest<3"),
         ("djangorestframework", "latest"),
