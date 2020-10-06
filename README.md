@@ -44,7 +44,8 @@ Here is some documentation for the configuration:
         "implementation_version": null,
         "extra": null                        // This might be the most useful when syncing a small subset.
                                              //   For example, setting null here for awscli will result 
-                                             //   in downloading more than 3GB of dependencies.  
+                                             //   in downloading more than 3GB of dependencies. 
+                                             //   Just put an empty list to download the direct dependencies only.  
     },
     "packages": {                            // Configuration of what to download.
                                              //   The key is the name of the package
