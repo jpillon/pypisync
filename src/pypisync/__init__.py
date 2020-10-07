@@ -8,6 +8,8 @@ from .PypiPackage import PypiPackage
 from .XmlRPC import ServerProxy
 from .SimpleIndexGenerator import SimpleIndexGenerator
 
+USER_AGENT = f"pypisync {__version__}"
+
 
 def main(config_file, simple_layout, gen_graph):
     syncer = PypiSync(config_file, simple_layout, gen_graph)

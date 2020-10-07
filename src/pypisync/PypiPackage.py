@@ -7,6 +7,7 @@ import os
 import subprocess
 import pkginfo
 import packaging.requirements
+import pypisync
 
 
 class Hashable:
@@ -218,6 +219,7 @@ class PypiPackage(Hashable):
         subprocess.check_call(
             [
                 "wget",
+                "-U", pypisync.USER_AGENT,
                 "-c",
                 url,
                 "-O",

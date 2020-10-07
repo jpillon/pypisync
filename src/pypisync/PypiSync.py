@@ -44,7 +44,7 @@ class PypiConnector:
         # cls._simple_client = pypi_simple.PyPISimple(endpoint=cls._simple_endpoint)
         cls._xmlrpc_client = pypisync.ServerProxy(
             cls._xmlrpc_endpoint,
-            headers=[("User-Agent", f"pypisync {pypisync.__version__}")]
+            headers=[("User-Agent", pypisync.USER_AGENT)]
         )
 
     @staticmethod
