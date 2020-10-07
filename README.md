@@ -28,7 +28,7 @@ Here is some documentation for the configuration:
                                              //     The elements of arch_exclude will be searched in:
                                              //       "-cp27-cp27m-win_amd64.whl"  
     "environment": {                         // Environment defined when gathering a package dependencies.
-                                             //   See documentation on "PEP 496" for more information 
+                                             //   See documentation on "PEP 508" for more information 
                                              //   Each parameter is either null or a list of strings. 
                                              //   If a parameter is null, all values are allowed.
         "os_name": null,
