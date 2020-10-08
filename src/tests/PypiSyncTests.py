@@ -66,9 +66,126 @@ class HTTPServerTest(unittest.TestCase):
 
 
 @ddt.ddt
+class PypiUnitTests(unittest.TestCase):
+    """
+    Perform some unit tests
+    """
+
+    # An environment configuration that shall accept everything
+    accept_all_environment = {
+        "os_name": None,
+        "sys_platform": None,
+        "platform_machine": None,
+        "platform_python_implementation": None,
+        "platform_release": None,
+        "platform_system": None,
+        "platform_version": None,
+        "python_version": None,
+        "python_full_version": None,
+        "implementation_name": None,
+        "implementation_version": None,
+        "extra": None
+    }
+
+    no_extra_environment = copy.deepcopy(accept_all_environment)
+    no_extra_environment["extra"] = []
+
+    some_extra_environment = copy.deepcopy(accept_all_environment)
+    some_extra_environment["extra"] = ["test", "security"]
+
+    python2_environment = copy.deepcopy(accept_all_environment)
+    python2_environment["python_version"] = ["2", "2.1", "2.2", "2.3", "2.4", "2.5", "2.6", "2.7"]
+
+    # data for evaluate_env_marker
+    env_marker_data = [
+        (accept_all_environment, 'extra in "any_value"', True),
+        (accept_all_environment, 'extra == "any_value"', True),
+        (accept_all_environment, 'extra != "any_value"', True),
+        (accept_all_environment, 'os_name == "any_value"', True),
+        (accept_all_environment, 'sys_platform == "any_value"', True),
+        (accept_all_environment, 'platform_machine == "any_value"', True),
+        (accept_all_environment, 'platform_python_implementation == "any_value"', True),
+        (accept_all_environment, 'platform_release == "any_value"', True),
+        (accept_all_environment, 'platform_system == "any_value"', True),
+        (accept_all_environment, 'platform_version == "any_value"', True),
+        (accept_all_environment, 'python_full_version == "any_value"', True),
+        (accept_all_environment, 'python_full_version == "any_value"', True),
+        (accept_all_environment, 'implementation_name == "any_value"', True),
+        (accept_all_environment, 'implementation_version == "any_value"', True),
+        (accept_all_environment, 'extra == "any_value"', True),
+        (accept_all_environment, 'platform_version>"1"', True),
+        (accept_all_environment, 'platform_version<"1"', True),
+        (accept_all_environment, 'platform_version >= "1"', True),
+        (accept_all_environment, 'platform_version <= "1"', True),
+        (accept_all_environment, 'platform_version == "1"', True),
+        (accept_all_environment, 'platform_version != "1"', True),
+        (accept_all_environment, 'python_version in "2.6 2.7 3.2 3.3"', True),
+        (accept_all_environment, 'os_name in "a b c d"', True),
+        (accept_all_environment, 'python_version == "2.6" or python_version == "2.7" or python_version == "3.2"', True),
+        (accept_all_environment, "python_version < '2.7'", True),
+        (accept_all_environment, 'python_version < "2.7"', True),
+        (accept_all_environment, 'python_version == "2.7"', True),
+        (accept_all_environment, "python_version >= '2.7'", True),
+        (accept_all_environment, 'python_version <= "2.7"', True),
+        (accept_all_environment, 'python_version < "2.7"', True),
+        (accept_all_environment, "python_version == '2.7'", True),
+        (accept_all_environment, 'python_version == "2.7"', True),
+        (accept_all_environment, 'python_version > "2.7"', True),
+        (accept_all_environment, '(python_version == "2.7") and extra == \'secure\'', True),
+        (accept_all_environment, '(python_version == "2.7") and extra == \'test\'', True),
+        (accept_all_environment, '(python_version == "2.7") and extra == \'test\'', True),
+        (accept_all_environment, '(python_version == "2.7") and extra == \'testing\'', True),
+        (accept_all_environment, 'python_version >= "2.7" and python_version < "2.8"', True),
+        (
+            accept_all_environment,
+            'python_version >= "2.7" and python_version < "2.8" or python_version >= "3.4" and python_version < "3.5"',
+            True
+        ),
+        (accept_all_environment, 'python_version > "2.7" and python_version < "2.8"', True),
+        (accept_all_environment, 'python_version == "2.7" or python_version == "3.3"', True),
+        (accept_all_environment, "python_version < '3'", True),
+        (accept_all_environment, "python_version >= '3'", True),
+        (accept_all_environment, "python_version < '3'", True),
+        (accept_all_environment, 'python_version < "3"', True),
+        (accept_all_environment, 'python_version > "3"', True),
+        (accept_all_environment, 'python_version < "3.0"', True),
+        (accept_all_environment, 'python_version >= "3.0"', True),
+        (no_extra_environment, 'extra == "test"', False),
+        (no_extra_environment, '(python_version < "3.0") and extra == "test"', False),
+        (no_extra_environment, 'extra == "security"', False),
+        (no_extra_environment, '(python_version < "3.0") and extra == "security"', False),
+        (some_extra_environment, 'extra == "test"', True),
+        (some_extra_environment, '(python_version < "3.0") and extra == "test"', True),
+        (some_extra_environment, 'extra == "tests"', False),
+        (some_extra_environment, '(python_version < "3.0") and extra == "tests"', False),
+        (some_extra_environment, 'extra == "security"', True),
+        (some_extra_environment, '(python_version < "3.0") and extra == "security"', True),
+        (some_extra_environment, '(python_version < "3.0")', True),
+        (python2_environment, '(python_version < "3.0")', True),
+        (python2_environment, '(python_version <= "3.0")', True),
+        (python2_environment, '(python_version >= "3.0")', False),
+        (python2_environment, '(python_version <= "1")', False),
+        (python2_environment, '(python_version > "2")', True),
+        (python2_environment, '(python_version == "2.7")', True),
+        (python2_environment, '(python_version > "2.1")', True),
+        (python2_environment, '(python_version > "2.6.8")', True),
+        (python2_environment, '(python_version > "2.7")', False),
+
+    ]
+
+    @ddt.idata(env_marker_data)
+    def test_env_marker(self, data):
+        environment, marker, expect = data
+        self.assertEqual(
+            pypisync.PypiPackage.evaluate_env_marker(marker, environment),
+            expect
+        )
+
+
+@ddt.ddt
 class PypiSyncTests(HTTPServerTest):
     """
-    Performs some basic tests
+    Performs some integration tests
     """
 
     # Packages that will be tested
