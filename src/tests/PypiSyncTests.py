@@ -312,10 +312,14 @@ class PypiSyncTests(HTTPServerTest):
         if "pip" not in self.current_config["packages"]:
             self.current_config["packages"]["pip"] = ["latest"]
         self.generate_config_file()
-        syncer = pypisync.PypiSync(
-            self.current_config_file, simple, False
+
+        self.assertEqual(
+            pypisync.main(
+                self.current_config_file, simple, False
+            )
+            , 0
         )
-        self.assertEqual(syncer.run(), 0)
+
         self.check_install_package(package, simple)
 
     def test_re(self):
@@ -327,8 +331,12 @@ class PypiSyncTests(HTTPServerTest):
         if "pip" not in self.current_config["packages"]:
             self.current_config["packages"]["pip"] = ["latest"]
         self.generate_config_file()
-        syncer = pypisync.PypiSync(
-            self.current_config_file, False, False
+
+        self.assertEqual(
+            pypisync.main(
+                self.current_config_file, False, False
+            ),
+            0
         )
-        self.assertEqual(syncer.run(), 0)
+
         self.check_install_package(("pyyaml", "latest"), False)
