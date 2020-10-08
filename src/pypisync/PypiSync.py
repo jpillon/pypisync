@@ -28,6 +28,7 @@ class PypiConnector:
     _endpoint_base = None
     _xmlrpc_endpoint = None
     _simple_endpoint = None
+    _project_info_cache = {}
 
     def __init__(self, endpoint_base):
         self.initialize(endpoint_base)
@@ -53,7 +54,9 @@ class PypiConnector:
 
     @staticmethod
     def get_project_info(project_name, arch_exclude):
-        return list(PypiConnector.get_project_info_generator(project_name, arch_exclude))
+        if project_name not in PypiConnector._project_info_cache:
+            PypiConnector._project_info_cache[project_name] = list(PypiConnector.get_project_info_generator(project_name, arch_exclude))
+        return PypiConnector._project_info_cache[project_name]
 
     @staticmethod
     def get_project_info_generator(project_name, arch_exclude):
