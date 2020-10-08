@@ -170,6 +170,8 @@ class PypiUnitTests(unittest.TestCase):
         (python2_environment, '(python_version > "2.1")', True),
         (python2_environment, '(python_version > "2.6.8")', True),
         (python2_environment, '(python_version > "2.7")', False),
+        (None, '(python_version > "2.7")', True),
+        (None, 'extra == "tests"', True),
 
     ]
 
