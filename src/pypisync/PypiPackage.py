@@ -129,11 +129,12 @@ class PypiPackage(Hashable):
             matching_value = value
         elif op == ">":
             tokens = value.split(".")
-            tokens[-1] = str(int(tokens[-1])+1)
+            tokens.append("1")
             matching_value = ".".join(tokens)
         elif op == "<":
             tokens = value.split(".")
             tokens[-1] = str(int(tokens[-1])-1)
+            tokens.append("9999")
             matching_value = ".".join(tokens)
         elif op == "!=":
             matching_value = "%s.9999" % value
