@@ -173,8 +173,9 @@ class PypiPackage(Hashable):
                 for i, variable in enumerate(sorted(evaluate_variables.keys())):
                     context[variable] = values[i]
                 result = eval(marker, {}, context)
-                if not result:
+                if result:
                     return result
+            return False
         return True
 
     @staticmethod
