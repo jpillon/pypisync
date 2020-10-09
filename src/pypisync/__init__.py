@@ -8,7 +8,7 @@ from .PypiPackage import PypiPackage
 from .XmlRPC import ServerProxy
 from .SimpleIndexGenerator import SimpleIndexGenerator
 
-USER_AGENT = f"pypisync {__version__}"
+USER_AGENT = "pypisync {version}".format(version=__version__)
 
 
 def main(config_file, simple_layout, gen_graph):
