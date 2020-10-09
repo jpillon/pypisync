@@ -64,7 +64,7 @@ class PypiConnector:
         response = requests.get(url, allow_redirects=True)
         if int(response.status_code) != 200:
             return
-        content = response.content
+        content = response.content.decode()
         data = json.loads(content)
         name = data["info"]["name"]
         for version in data["releases"]:

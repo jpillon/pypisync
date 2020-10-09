@@ -10,9 +10,14 @@ logger = logging.getLogger(__name__)
 class ProxiedTransport(xmlrpc.client.SafeTransport):
     def __init__(self, use_datetime=False, use_builtin_types=False,
                  *, headers=(), proxy=None):
-        super().__init__(use_datetime=use_datetime,
-                         use_builtin_types=use_builtin_types,
-                         headers=headers)
+        try:
+            super().__init__(use_datetime=use_datetime,
+                             use_builtin_types=use_builtin_types,
+                             headers=headers)
+        except TypeError:
+            # Backward compatibility for older python
+            super().__init__(use_datetime=use_datetime,
+                             use_builtin_types=use_builtin_types)
         self.proxy = proxy
         if self.proxy is not None:
             while self.proxy.endswith("/"):
@@ -56,17 +61,29 @@ def get_xmlrpc_server_proxy(
         use_builtin_types=False,
         headers=(),
     )
-    return xmlrpc.client.ServerProxy(
-        uri,
-        transport=p,
-        encoding=encoding,
-        verbose=verbose,
-        allow_none=allow_none,
-        use_datetime=use_datetime,
-        use_builtin_types=use_builtin_types,
-        headers=headers,
-        context=context
-    )
+    try:
+        return xmlrpc.client.ServerProxy(
+            uri,
+            transport=p,
+            encoding=encoding,
+            verbose=verbose,
+            allow_none=allow_none,
+            use_datetime=use_datetime,
+            use_builtin_types=use_builtin_types,
+            headers=headers,
+            context=context
+        )
+    except TypeError:
+        return xmlrpc.client.ServerProxy(
+            uri,
+            transport=p,
+            encoding=encoding,
+            verbose=verbose,
+            allow_none=allow_none,
+            use_datetime=use_datetime,
+            use_builtin_types=use_builtin_types,
+            context=context
+        )
 
 
 # TODO: Maybe use another lib for proxy compatibility (like xmlrpclibex)
