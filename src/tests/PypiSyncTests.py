@@ -197,8 +197,7 @@ class PypiSyncTests(HTTPServerTest):
         ("pyyaml", "latest>5.0.0"),
         ("pyyaml", ">=5.2.0"),
         ("awscli", "latest"),
-        ("django", "2 latest<3"),
-        ("djangorestframework", "latest"),
+        ("django", "2 latest<3")
     ]
 
     # alternatively activate the "simple" layout
