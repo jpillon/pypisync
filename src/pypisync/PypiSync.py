@@ -126,8 +126,6 @@ class PypiSync:
         except packaging.version.InvalidVersion:
             # Bad version. don't download it
             result = False
-
-        PypiSync.logger.debug("%s, %s => %s", wanted, current, result)
         return result
 
     def _latest_version(self, package, arch_exclude, n=1, spec=None):
