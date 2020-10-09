@@ -33,7 +33,25 @@ jobs:
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --tee --output-file flake8.out
     - name: Test with pytest
       run: |
-        pytest src/tests/PypiSyncTests.py
+        pytest --cov=./ --cov-report=xml src/tests/PypiSyncTests.py
+    - name: Generate packages
+      run: python setup.py sdist bdist_wheel
+    - name: Archive generated packages
+      uses: actions/upload-artifact@v2
+      with:
+        name: Packages
+        path: dist
+    - name: Archive coverage report
+      uses: actions/upload-artifact@v2
+      with:
+        name: Coverage
+        path: coverage.xml
+    - name: Archive flake8 report
+      uses: actions/upload-artifact@v2
+      with:
+        name: Flake8
+        path: flake8.out
+      
