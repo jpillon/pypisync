@@ -13,6 +13,7 @@ import time
 import copy
 import packaging.version
 import packaging.specifiers
+import http.server
 
 
 class HTTPServerTest(unittest.TestCase):
@@ -23,26 +24,26 @@ class HTTPServerTest(unittest.TestCase):
         super().__init__(methodName=methodName)
         self.temp_data_dir = None
         self._server_thread = None
-        self._server_process = None
+        self._http_server = None
         self.server_url = None
 
     def _run_http_server(self):
-        self._server_process = subprocess.Popen(
-            [
-                "python3",
-                "-m",
-                "http.server",
-                "-d", self.temp_data_dir,
-                "1357"
-            ]
-        )
+        os.chdir(self.temp_data_dir)
+        server_address = ("", 0)
+        http.server.SimpleHTTPRequestHandler.protocol_version = "HTTP/1.0"
+        self._http_server = http.server.HTTPServer(server_address, http.server.SimpleHTTPRequestHandler)
+
+        sa = self._http_server.socket.getsockname()
+        self.server_url = "http://localhost:%s" % sa[1]
+        print("Serving HTTP on", sa[0], "port", sa[1], "...")
+        self._http_server.serve_forever()
 
     def setUp(self) -> None:
         """
         """
         super().setUp()
         # Create a random temporary directory
-        self.server_url = "http://localhost:1357"
+        self.server_url = None
         self.temp_data_dir = tempfile.mkdtemp(suffix="pypisync_tests_data_dir")
         self._server_thread = threading.Thread(target=self._run_http_server)
         self._server_thread.start()
@@ -53,11 +54,10 @@ class HTTPServerTest(unittest.TestCase):
         """
         super().tearDown()
         if self._server_thread is not None:
-            self._server_process.kill()
-            self._server_process.wait()
+            self._http_server.shutdown()
             self._server_thread.join()
+        self._http_server = None
         self._server_thread = None
-        self._server_process = None
         self.server_url = None
 
         # Cleanup the temporary directory
